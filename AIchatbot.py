@@ -76,7 +76,7 @@ if st.sidebar.button("➕ New Chat"):
 # List existing chats with delete option
 for chat_id, chat in list(all_chats.items()):
     title = get_chat_title(chat)
-    col1, col2 = st.sidebar.columns([4, 1])
+    col1, col2 = st.sidebar.columns([4, 2])
     with col1:
         # Click title to open chat
         if st.button(title, key=f"open_{chat_id}"):
