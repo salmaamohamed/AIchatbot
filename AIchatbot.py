@@ -4,14 +4,14 @@ import os
 import datetime
 import time
 import uuid
-from azure.ai.inference import ChatCompletionsClient
-from azure.core.credentials import AzureKeyCredential
-from azure.core.exceptions import ServiceResponseError
+import google.generativeai as genai
 
-# Azure config
-endpoint = "https://models.github.ai/inference"
-token = "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"
-client = ChatCompletionsClient(endpoint=endpoint, credential=AzureKeyCredential(token))
+# --- Gemini Config ---
+GEMINI_API_KEY = "AIzaSyCHBFK22JYLT5Mg6Xmf-QP1HS8tMYhBfn4"   # ضع المفتاح الحقيقي هنا
+GEMINI_MODEL = "gemini-2.5-flash"
+
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel(GEMINI_MODEL)
 
 # File to save all chats
 chats_file = "all_chats.pkl"
@@ -32,19 +32,20 @@ def save_all_chats():
         pickle.dump(all_chats, f)
 
 def get_ai_response(messages):
-    retries = 3
-    for attempt in range(retries):
-        try:
-            response = client.complete(
-                model="gpt-4o-mini",
-                messages=messages
-            )
-            return response.choices[0].message.content
-        except ServiceResponseError:
-            time.sleep(2)
-        except Exception as e:
-            return f"Unexpected error: {e}"
-    return "Failed to connect after several retries."
+    """Send conversation history to Gemini"""
+    # Gemini expects only the text context, so join messages
+    history = ""
+    for msg in messages:
+        if msg["role"] == "user":
+            history += f"User: {msg['content']}\n"
+        elif msg["role"] == "assistant":
+            history += f"Assistant: {msg['content']}\n"
+
+    try:
+        response = model.generate_content(history + "\nAssistant:")
+        return response.text
+    except Exception as e:
+        return f"Unexpected error: {e}"
 
 def get_chat_title(chat):
     """Return chat title based on first user message"""
@@ -56,8 +57,8 @@ def get_chat_title(chat):
 
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="Azure Chatbot", page_icon="💬", layout="wide")
-st.title("💬 Azure Chatbot with Multiple Chats")
+st.set_page_config(page_title="Gemini Chatbot", page_icon="💬", layout="wide")
+st.title("💬 Gemini Chatbot with Multiple Chats")
 
 # Sidebar
 st.sidebar.header("📂 Chats")
@@ -99,22 +100,18 @@ if st.session_state.chat_id is None:
     st.stop()
 else:
     messages = all_chats[st.session_state.chat_id]
-    # 🔹 Fix: if stored as dict, extract the list
     if isinstance(messages, dict) and "messages" in messages:
         messages = messages["messages"]
         all_chats[st.session_state.chat_id] = messages
 
-
-# Display chat history
 # Display chat history
 for msg in messages:
-    if not isinstance(msg, dict):  # skip corrupted/invalid messages
+    if not isinstance(msg, dict):  # skip corrupted
         continue
     if msg.get("role") == "system":
         continue
     with st.chat_message(msg["role"]):
         st.markdown(msg.get("content", ""))
-
 
 # Chat input
 if user_input := st.chat_input("Type your message..."):
@@ -129,7 +126,7 @@ if user_input := st.chat_input("Type your message..."):
     elif "date" in user_input.lower():
         ai_reply = f"Today's date is {datetime.date.today().strftime('%B %d, %Y')}"
     else:
-        # AI response
+        # Gemini response
         ai_reply = get_ai_response(messages)
 
     # Display AI reply

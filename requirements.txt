@@ -1,3 +1,2 @@
 streamlit
-azure-ai-inference
-azure-core
+google-generativeai
