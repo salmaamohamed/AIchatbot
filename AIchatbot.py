@@ -58,10 +58,10 @@ def get_chat_title(chat):
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Gemini Chatbot", page_icon="💬", layout="wide")
-st.title("💬 Gemini Chatbot with Multiple Chats")
+st.title("Your helpful Chatbot")
 
 # Sidebar
-st.sidebar.header("📂 Chats")
+st.sidebar.header("Chats")
 
 # New chat button
 if st.sidebar.button("➕ New Chat"):
@@ -83,7 +83,7 @@ for chat_id, chat in list(all_chats.items()):
             st.session_state.chat_id = chat_id
             st.rerun()
     with col2:
-        if st.button("🗑️", key=f"delete_{chat_id}"):
+        if st.button("Delete", key=f"delete_{chat_id}"):
             del all_chats[chat_id]
             if st.session_state.chat_id == chat_id:
                 st.session_state.chat_id = None
